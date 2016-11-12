@@ -19,7 +19,7 @@ order_parser.add_argument('minQty', type=int, help='Min Quantity to order', stor
 order_parser.add_argument('orderId', type=int, help='Order ID', store_missing=False)
 order_parser.add_argument('trailingPercent', type=float, help='Trailing Stop percent', store_missing=False)
 order_parser.add_argument('action', type=str, required=False, help='Must be BUY, SELL or SSHORT', store_missing=False)
-order_parser.add_argument('tif', type=str, help='Time in force', choices=['DAT', 'GTC', 'IOC', 'GTD'], store_missing=False)
+order_parser.add_argument('tif', type=str, help='Time in force', choices=['DAY', 'GTC', 'IOC', 'GTD'], store_missing=False)
 
 
 # ---------------------------------------------------------------------
@@ -39,5 +39,3 @@ contract_parser.add_argument('secType', type=str, required=False, default='STK',
 contract_parser.add_argument('exchange', type=str, required=False, default='SMART', help='Exchange (ie NASDAQ, SMART)', store_missing=False)
 contract_parser.add_argument('currency', type=str, required=False, default='USD',
                              help='Currency used for order (ie USD, GBP))', store_missing=False)
-# not needed for updates:
-contract_parser.add_argument('symbol', type=str, required=False, help='Stock ticker symbol to order', store_missing=False)
