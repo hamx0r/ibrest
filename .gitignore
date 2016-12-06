@@ -1,3 +1,6 @@
 notes.md
 etc/ibrest.*
 .idea
+/app/ibrest.key
+/app/ibrest.crt
+/app/ibrest.log
