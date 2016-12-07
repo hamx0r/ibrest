@@ -23,9 +23,9 @@ RUN apt-get install -y python-pip
 RUN pip install --upgrade pip
 
 #TODO for production, do this:
-#COPY ./app /app
+COPY ./app /app
 #TODO for development, do this instead:
-VOLUME /app
+#VOLUME /app
 
 COPY requirements.txt /
 # To enable HTTPS, we need to copy certs and a new nginx.conf
