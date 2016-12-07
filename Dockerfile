@@ -23,19 +23,20 @@ RUN apt-get install -y python-pip
 RUN pip install --upgrade pip
 
 #TODO for production, do this:
-COPY ./app /app
+    COPY ./app /app
 #TODO for development, do this instead:
 #VOLUME /app
 
 COPY requirements.txt /
+RUN pip install -r /requirements.txt
+
 # To enable HTTPS, we need to copy certs and a new nginx.conf
 COPY ./etc/nginx.conf /etc/nginx/conf.d/
 # TODO be sure to create your certs!
 #COPY ./etc/ibrest.crt /etc/ssl/
 #COPY ./etc/ibrest.key /etc/ssl/
-WORKDIR /etc/ssl/
-RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ibrest.key -out ibrest.crt -new -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN=www.example.com"
 
-RUN pip install -r /requirements.txt
+RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/ibrest.key -out /etc/ssl/ibrest.crt -new -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN=www.example.com"
+
 # Be sure to set environment params: IBGW_HOST and IBGW_PORT for how to connect to ibgw if you aren't linking per the "run" examples
 
