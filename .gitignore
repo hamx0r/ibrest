@@ -4,3 +4,4 @@ etc/ibrest.*
 /app/ibrest.key
 /app/ibrest.crt
 /app/ibrest.log
+/app/prices.sqlite3
