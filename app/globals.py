@@ -20,7 +20,7 @@ beacon_last_token = None
 beacon_current_token = None
 current_ip = None
 
-timeout = 10  # Max loops
+timeout = 20  # Max loops
 
 # Mutables
 managedAccounts = []
