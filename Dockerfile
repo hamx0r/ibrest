@@ -21,12 +21,6 @@ RUN apt-get update -y
 RUN apt-get install -y python-pip
  #python-dev build-essential
 RUN pip install --upgrade pip
-
-#TODO for production, do this:
-    COPY ./app /app
-#TODO for development, do this instead:
-#VOLUME /app
-
 COPY requirements.txt /
 RUN pip install -r /requirements.txt
 
@@ -35,6 +29,14 @@ COPY ./etc/nginx.conf /etc/nginx/conf.d/
 # TODO be sure to create your certs!
 #COPY ./etc/ibrest.crt /etc/ssl/
 #COPY ./etc/ibrest.key /etc/ssl/
+
+
+#TODO for production, do this:
+COPY ./app /app
+#TODO for development, do this instead:
+#VOLUME /app
+
+
 
 RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/ibrest.key -out /etc/ssl/ibrest.crt -new -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN=www.example.com"
 
