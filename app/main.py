@@ -202,7 +202,7 @@ class Order(Resource):
 class OrderOCA(Resource):
     """ Resource to handle requests for Bracket-like OCA Orders
 
-    Takes a JSON list of Orders.   Item 0 is always considered to be th opening order of a position, and the rest are
+    Takes a JSON list of Orders.   Item 0 is always considered to be the opening order of a position, and the rest are
     the OCA group to close the position.
 
     This behaves like an elaborate Bracketed Order, but the logic is handled by IBREST instead of the IB GW client since
