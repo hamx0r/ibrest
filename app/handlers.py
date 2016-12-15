@@ -119,7 +119,8 @@ def error_handler(msg):
     g.error_resp[msg.id] = {i[0]: i[1] for i in msg.items()}
     log.error('ERROR: {}'.format(msg))
 
-    # If our client connections get out of sync,
+    # TODO if clientId is already in use erroneously, attempt to recover, or generate new clientId
+    # If our client connections get out of sync:
 
 
 def generic_handler(msg):

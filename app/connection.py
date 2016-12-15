@@ -15,7 +15,7 @@ log = logging.getLogger(__name__)
 # log = utils.setup_logger(log)
 #log.setLevel(logging.WARN)
 
-
+# TODO use single clientId.  Update sync.py for all /order endpoints
 def get_client(client_id=None):
     """ Creates a client connection to be used with orders
     """
