@@ -13,19 +13,18 @@
 # or maybe
 # `docker run -d --restart=always --name ibrest --link ibgw -e "ID_SECRET_KEY=mysecret" -p 443:443 -v /home/jhaury/ibrest/app:/app ibrest`
 
-
-
-FROM tiangolo/uwsgi-nginx-flask:flask
+#FROM tiangolo/uwsgi-nginx-flask:flask
+FROM python:2.7
 MAINTAINER Jason Haury "jason.haury@gmail.com"
-RUN apt-get update -y
-RUN apt-get install -y python-pip
- #python-dev build-essential
+#RUN apt-get update -y
+#RUN apt-get install -y python-pip
+# #python-dev build-essential
 RUN pip install --upgrade pip
 COPY requirements.txt /
 RUN pip install -r /requirements.txt
 
 # To enable HTTPS, we need to copy certs and a new nginx.conf
-COPY ./etc/nginx.conf /etc/nginx/conf.d/
+#COPY ./etc/nginx.conf /etc/nginx/conf.d/
 # TODO be sure to create your certs!
 #COPY ./etc/ibrest.crt /etc/ssl/
 #COPY ./etc/ibrest.key /etc/ssl/
@@ -36,9 +35,10 @@ COPY ./app /app
 #TODO for development, do this instead:
 #VOLUME /app
 
-
-
-RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/ibrest.key -out /etc/ssl/ibrest.crt -new -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN=www.example.com"
+WORKDIR /app
+CMD [ "python", "./main.py" ]
+EXPOSE 80
+#RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/ibrest.key -out /etc/ssl/ibrest.crt -new -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN=www.example.com"
 
 # Be sure to set environment params: IBGW_HOST and IBGW_PORT for how to connect to ibgw if you aren't linking per the "run" examples
 

@@ -30,6 +30,7 @@ import connection
 import requests
 from datetime import datetime
 from functools import wraps
+from ib.opt import ibConnection
 
 __author__ = 'Jason Haury'
 
@@ -335,7 +336,7 @@ class Test(Resource):
 @app.route("/")
 def hello():
     return "Hello World!  These clients are connected to IBGW {}".format(
-        [(c, g.client_pool[c].isConnected()) for c in xrange(8)])
+        [(id, c.isConnected()) for id, c in g.client_pool.iteritems()])
 
 
 # ---------------------------------------------------------------------
@@ -359,14 +360,14 @@ api.add_resource(Test, '/test')
 
 log.debug('Using IB GW client at: {}:{}'.format(g.client_pool[0].host, g.client_pool[0].port))
 # Connect to all clients in our pool
-for c in [0] + g.clientId_pool:  # +1 for Order client
-    client = g.client_pool[c]
-    connection.setup_client(client)
-    # TODO use gevent to time.sleeps are non blocking
-    time.sleep(1)
-    client.connect()
-    log.debug('Client {} connected? {}'.format(c, client.isConnected()))
-    g.client_pool[c] = client
+# for c in [0] + g.clientId_pool:  # +1 for Order client
+#     client = g.client_pool[c]
+#     connection.setup_client(client)
+#     # TODO use gevent to time.sleeps are non blocking
+#     time.sleep(1)
+#     client.connect()
+#     log.debug('Client {} connected? {}'.format(c, client.isConnected()))
+#     g.client_pool[c] = client
 
 # Call our own beacon code to register with GAE
 if g.serializer is not None:
@@ -374,7 +375,15 @@ if g.serializer is not None:
 
 if __name__ == '__main__':
     host = os.getenv('IBREST_HOST', '127.0.0.1')
-    port = int(os.getenv('IBREST_PORT', '5000'))
+    port = int(os.getenv('IBREST_PORT', '80'))
+    client_id = int(os.getenv('IBGW_CLIENT_ID', 0))
+
+    # Set up our client connection with IBGW
+    client = ibConnection(g.ibgw_host, g.ibgw_port, client_id)
+    connection.setup_client(client)
+    client.connect()
+    g.client_pool = {client_id: client}
+    g.clientId_pool = [client_id]
 
     # When runnning with werkzeug, we already get good logging to stdout, so disabble loggers
     # root.setLevel(logging.ERROR)
@@ -383,16 +392,19 @@ if __name__ == '__main__':
 
     # Log to file to since Docker isn't doing it for use
     # Add rotating file log handler
-    from logging.handlers import TimedRotatingFileHandler
+    # from logging.handlers import TimedRotatingFileHandler
+    #
+    # hdlr_file = TimedRotatingFileHandler('ibrest.log', when='D', backupCount=5)
+    # hdlr_file.setLevel(logging.DEBUG)
+    # hdlr_file.setFormatter(logging.Formatter(log_format))
+    # logging.getLogger().addHandler(hdlr_file)
 
-    hdlr_file = TimedRotatingFileHandler('ibrest.log', when='D', backupCount=5)
-    hdlr_file.setLevel(logging.DEBUG)
-    hdlr_file.setFormatter(logging.Formatter(log_format))
-    logging.getLogger().addHandler(hdlr_file)
+
 
     DEBUG = False
     # For HTTPS with or without debugging
-    app.run(debug=DEBUG, host=host, port=port, ssl_context=context, threaded=True)
+    #app.run(debug=DEBUG, host=host, port=port, ssl_context=context, threaded=True)
+    app.run(debug=DEBUG, host=host, port=port)
 
 
 
