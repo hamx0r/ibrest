@@ -17,7 +17,7 @@ services:
     container_name: ibproxy
     restart: always
     ports:
-    - "443:443"
+      - "443:443"
     links:
     - ibrest0
     - ibrest1
@@ -36,12 +36,12 @@ services:
     container_name: ibrest0
     restart: always
     environment:
-    - ID_SECRET_KEY
-    - IBGW_PORT_4003_TCP_ADDR=ibgw
-    - IBGW_CLIENT_ID=0
-    - IBREST_HOST=0.0.0.0
+      - ID_SECRET_KEY
+      - IBGW_PORT_4003_TCP_ADDR=ibgw
+      - IBGW_CLIENT_ID=0
+      - IBREST_HOST=0.0.0.0
     links:
-    - ibgw
+      - ibgw
   ibrest1:
     image: hamx0r/ibrest:latest
     container_name: ibrest1
@@ -52,7 +52,7 @@ services:
       - IBGW_CLIENT_ID=1
       - IBREST_HOST=0.0.0.0
     links:
-    - ibgw
+      - ibgw
   ibrest2:
     image: hamx0r/ibrest:latest
     container_name: ibrest2
@@ -63,7 +63,7 @@ services:
       - IBGW_CLIENT_ID=2
       - IBREST_HOST=0.0.0.0
     links:
-    - ibgw
+      - ibgw
   ibrest3:
     image: hamx0r/ibrest:latest
     container_name: ibrest3
@@ -74,7 +74,7 @@ services:
       - IBGW_CLIENT_ID=3
       - IBREST_HOST=0.0.0.0
     links:
-    - ibgw
+      - ibgw
   ibrest4:
     image: hamx0r/ibrest:latest
     container_name: ibrest4
@@ -85,7 +85,7 @@ services:
       - IBGW_CLIENT_ID=4
       - IBREST_HOST=0.0.0.0
     links:
-    - ibgw
+      - ibgw
   ibrest5:
     image: hamx0r/ibrest:latest
     container_name: ibrest5
@@ -96,7 +96,7 @@ services:
       - IBGW_CLIENT_ID=5
       - IBREST_HOST=0.0.0.0
     links:
-    - ibgw
+      - ibgw
   ibrest6:
     image: hamx0r/ibrest:latest
     container_name: ibrest6
@@ -107,7 +107,7 @@ services:
       - IBGW_CLIENT_ID=6
       - IBREST_HOST=0.0.0.0
     links:
-    - ibgw
+      - ibgw
   ibrest7:
     image: hamx0r/ibrest:latest
     container_name: ibrest7

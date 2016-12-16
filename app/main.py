@@ -98,14 +98,15 @@ def send_flare_to_gae():
 
     # We want to tell GAE our IP address too
     # curl -H "Metadata-Flavor: Google" http://metadata/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip
-    headers = {'Metadata-Flavor': 'Google'}
-    metadata_url = "http://metadata/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip"
-    ip = requests.get(metadata_url, headers=headers).text
-    if ip is not None:
-        g.current_ip = ip
+    # headers = {'Metadata-Flavor': 'Google'}
+    # metadata_url = "http://metadata/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip"
+    # ip = requests.get(metadata_url, headers=headers).text
+    # if ip is not None:
+    #     g.current_ip = ip
 
     # set up a response for be encrypted & signed
-    resp = {'ip': ip, 'token': token}
+    # resp = {'ip': ip, 'token': token}
+    resp = {'token': token}
     # Now sign it, seal it...:
     flare = g.serializer.dumps(resp)
     resp['payload'] = flare
@@ -326,10 +327,9 @@ class Beacon(Resource):
 
 class Test(Resource):
     def get(self):
-        resp = ""
-        for k, v in request.environ.iteritems():
-            resp += "{}: {}".format(str(k), str(v))
-        print request.environ.items()
+        resp = {k: str(v) for k, v in request.environ.iteritems()}
+
+        log.debug('Environment vars: {}'.format(resp))
         return resp
 
 
@@ -384,7 +384,8 @@ if __name__ == '__main__':
     # Call our own beacon code to register with GAE
     if g.serializer is not None and client_id == 0:
         log.debug('Sent flare to GAE with response: {}'.format(send_flare_to_gae()))
-
+    else:
+        log.debug('No beacon flare sent.  No ID_SECRET_KEY found in environment: {}.  Client ID: {}'.format(os.getenv('ID_SECRET_KEY'), client_id))
 
 
     # When runnning with werkzeug, we already get good logging to stdout, so disabble loggers
