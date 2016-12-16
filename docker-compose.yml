@@ -10,13 +10,11 @@ services:
     ports:
       - "4003:4003"
   proxy:
-#    build:
-#      context: .
-#      dockerfile: proxy.Dockerfile
+    build:
+      context: .
+      dockerfile: proxy.Dockerfile
     image: hamx0r/ibrest:proxy
-    container_name: proxy
-#    logging:
-#      driver: none
+    container_name: ibproxy
     ports:
     - "443:443"
     links:
@@ -30,6 +28,9 @@ services:
     - ibrest7
   # These are all worker ibrest instances to be proxied
   ibrest0:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: hamx0r/ibrest:latest
     container_name: ibrest0
     restart: always

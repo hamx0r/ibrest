@@ -14,7 +14,7 @@
 # `docker run -d --restart=always --name ibrest --link ibgw -e "ID_SECRET_KEY=mysecret" -p 443:443 -v /home/jhaury/ibrest/app:/app ibrest`
 
 #FROM tiangolo/uwsgi-nginx-flask:flask
-FROM python:2.7
+FROM python:2.7-alpine
 MAINTAINER Jason Haury "jason.haury@gmail.com"
 #RUN apt-get update -y
 #RUN apt-get install -y python-pip

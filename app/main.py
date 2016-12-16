@@ -369,10 +369,6 @@ log.debug('Using IB GW client at: {}:{}'.format(g.client_pool[0].host, g.client_
 #     log.debug('Client {} connected? {}'.format(c, client.isConnected()))
 #     g.client_pool[c] = client
 
-# Call our own beacon code to register with GAE
-if g.serializer is not None:
-    log.debug('Sent flare to GAE with response: {}'.format(send_flare_to_gae()))
-
 if __name__ == '__main__':
     host = os.getenv('IBREST_HOST', '127.0.0.1')
     port = int(os.getenv('IBREST_PORT', '80'))
@@ -384,6 +380,12 @@ if __name__ == '__main__':
     client.connect()
     g.client_pool = {client_id: client}
     g.clientId_pool = [client_id]
+
+    # Call our own beacon code to register with GAE
+    if g.serializer is not None and client_id == 0:
+        log.debug('Sent flare to GAE with response: {}'.format(send_flare_to_gae()))
+
+
 
     # When runnning with werkzeug, we already get good logging to stdout, so disabble loggers
     # root.setLevel(logging.ERROR)
