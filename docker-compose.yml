@@ -20,13 +20,13 @@ services:
       - "443:443"
     links:
     - ibrest0
-    - ibrest1
-    - ibrest2
-    - ibrest3
-    - ibrest4
-    - ibrest5
-    - ibrest6
-    - ibrest7
+#    - ibrest1
+#    - ibrest2
+#    - ibrest3
+#    - ibrest4
+#    - ibrest5
+#    - ibrest6
+#    - ibrest7
   # These are all worker ibrest instances to be proxied
   ibrest0:
     build:
@@ -42,80 +42,80 @@ services:
       - IBREST_HOST=0.0.0.0
     links:
       - ibgw
-  ibrest1:
-    image: hamx0r/ibrest:latest
-    container_name: ibrest1
-    restart: always
-    environment:
-      - ID_SECRET_KEY
-      - IBGW_PORT_4003_TCP_ADDR=ibgw
-      - IBGW_CLIENT_ID=1
-      - IBREST_HOST=0.0.0.0
-    links:
-      - ibgw
-  ibrest2:
-    image: hamx0r/ibrest:latest
-    container_name: ibrest2
-    restart: always
-    environment:
-      - ID_SECRET_KEY
-      - IBGW_PORT_4003_TCP_ADDR=ibgw
-      - IBGW_CLIENT_ID=2
-      - IBREST_HOST=0.0.0.0
-    links:
-      - ibgw
-  ibrest3:
-    image: hamx0r/ibrest:latest
-    container_name: ibrest3
-    restart: always
-    environment:
-      - ID_SECRET_KEY
-      - IBGW_PORT_4003_TCP_ADDR=ibgw
-      - IBGW_CLIENT_ID=3
-      - IBREST_HOST=0.0.0.0
-    links:
-      - ibgw
-  ibrest4:
-    image: hamx0r/ibrest:latest
-    container_name: ibrest4
-    restart: always
-    environment:
-      - ID_SECRET_KEY
-      - IBGW_PORT_4003_TCP_ADDR=ibgw
-      - IBGW_CLIENT_ID=4
-      - IBREST_HOST=0.0.0.0
-    links:
-      - ibgw
-  ibrest5:
-    image: hamx0r/ibrest:latest
-    container_name: ibrest5
-    restart: always
-    environment:
-      - ID_SECRET_KEY
-      - IBGW_PORT_4003_TCP_ADDR=ibgw
-      - IBGW_CLIENT_ID=5
-      - IBREST_HOST=0.0.0.0
-    links:
-      - ibgw
-  ibrest6:
-    image: hamx0r/ibrest:latest
-    container_name: ibrest6
-    restart: always
-    environment:
-      - ID_SECRET_KEY
-      - IBGW_PORT_4003_TCP_ADDR=ibgw
-      - IBGW_CLIENT_ID=6
-      - IBREST_HOST=0.0.0.0
-    links:
-      - ibgw
-  ibrest7:
-    image: hamx0r/ibrest:latest
-    container_name: ibrest7
-    restart: always
-    environment:
-      - ID_SECRET_KEY
-      - IBGW_PORT_4003_TCP_ADDR=ibgw
-      - IBGW_CLIENT_ID=7
-      - IBREST_HOST=0.0.0.0
-    links:
-    - ibgw
+#  ibrest1:
+#    image: hamx0r/ibrest:latest
+#    container_name: ibrest1
+#    restart: always
+#    environment:
+#      - ID_SECRET_KEY
+#      - IBGW_PORT_4003_TCP_ADDR=ibgw
+#      - IBGW_CLIENT_ID=1
+#      - IBREST_HOST=0.0.0.0
+#    links:
+#      - ibgw
+#  ibrest2:
+#    image: hamx0r/ibrest:latest
+#    container_name: ibrest2
+#    restart: always
+#    environment:
+#      - ID_SECRET_KEY
+#      - IBGW_PORT_4003_TCP_ADDR=ibgw
+#      - IBGW_CLIENT_ID=2
+#      - IBREST_HOST=0.0.0.0
+#    links:
+#      - ibgw
+#  ibrest3:
+#    image: hamx0r/ibrest:latest
+#    container_name: ibrest3
+#    restart: always
+#    environment:
+#      - ID_SECRET_KEY
+#      - IBGW_PORT_4003_TCP_ADDR=ibgw
+#      - IBGW_CLIENT_ID=3
+#      - IBREST_HOST=0.0.0.0
+#    links:
+#      - ibgw
+#  ibrest4:
+#    image: hamx0r/ibrest:latest
+#    container_name: ibrest4
+#    restart: always
+#    environment:
+#      - ID_SECRET_KEY
+#      - IBGW_PORT_4003_TCP_ADDR=ibgw
+#      - IBGW_CLIENT_ID=4
+#      - IBREST_HOST=0.0.0.0
+#    links:
+#      - ibgw
+#  ibrest5:
+#    image: hamx0r/ibrest:latest
+#    container_name: ibrest5
+#    restart: always
+#    environment:
+#      - ID_SECRET_KEY
+#      - IBGW_PORT_4003_TCP_ADDR=ibgw
+#      - IBGW_CLIENT_ID=5
+#      - IBREST_HOST=0.0.0.0
+#    links:
+#      - ibgw
+#  ibrest6:
+#    image: hamx0r/ibrest:latest
+#    container_name: ibrest6
+#    restart: always
+#    environment:
+#      - ID_SECRET_KEY
+#      - IBGW_PORT_4003_TCP_ADDR=ibgw
+#      - IBGW_CLIENT_ID=6
+#      - IBREST_HOST=0.0.0.0
+#    links:
+#      - ibgw
+#  ibrest7:
+#    image: hamx0r/ibrest:latest
+#    container_name: ibrest7
+#    restart: always
+#    environment:
+#      - ID_SECRET_KEY
+#      - IBGW_PORT_4003_TCP_ADDR=ibgw
+#      - IBGW_CLIENT_ID=7
+#      - IBREST_HOST=0.0.0.0
+#    links:
+#    - ibgw

@@ -65,9 +65,9 @@ def authenticate(func):
 
         ibrest_info = g.serializer.loads(flare)
         authorized = False
-        if ibrest_info['ip'] == g.current_ip:
-            if ibrest_info['token'] in [g.beacon_current_token, g.beacon_last_token]:
-                authorized = True
+        # if ibrest_info['ip'] == g.current_ip:
+        if ibrest_info['token'] in [g.beacon_current_token, g.beacon_last_token]:
+            authorized = True
 
         log.debug('Authorized = {}'.format(authorized))
         if authorized:
