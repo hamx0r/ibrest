@@ -44,6 +44,9 @@ account_update_resp = dict(accountDownloadEnd=False, updateAccountValue=dict(), 
 error_resp = {-1: {"errorCode": 502, "errorMsg": "Couldn't connect to TWS.  Confirm that \"Enable ActiveX and Socket "
                                                  "Clients\" is enabled on the TWS \"Configure->API\" menu.", "id": -1},
               -2: {"errorCode": None, "errorMsg": "Too many requests.  Client ID not available in time.  Try request later", "id": -2}}
+
+# Store contractDetails messages
+contract_resp = dict(contractDetailsEnd=False, contractDetails=dict(), bondContractDetails=dict())
 # When getting order info, we want it for all clients, and don't care so much if multiple requests try to populate this
 order_resp = dict(openOrderEnd=False, openOrder=[], orderStatus=[])
 # When placing/deleting orders, we care about what orderId is used.  Key off orderId.

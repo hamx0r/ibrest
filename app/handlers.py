@@ -8,6 +8,7 @@ import sync
 from ib.ext.Contract import Contract
 from ib.ext.Order import Order
 from ib.ext.OrderState import OrderState
+from ib.ext.ContractDetails import ContractDetails
 import logging
 
 __author__ = 'Jason Haury'
@@ -24,7 +25,7 @@ def msg_to_dict(msg):
     """
     d = dict()
     for i in msg.items():
-        if isinstance(i[1], (Contract, Order, OrderState)):
+        if isinstance(i[1], (Contract, Order, OrderState, ContractDetails)):
             d[i[0]] = i[1].__dict__
         else:
             d[i[0]] = i[1]
@@ -90,7 +91,7 @@ def history_handler(msg):
     """
     history = msg_to_dict(msg)
     g.history_resp[int(history['reqId'])][msg.date] = history.copy()
-    #log.debug('HISTORY: {})'.format(msg))
+    # log.debug('HISTORY: {})'.format(msg))
 
 
 def order_handler(msg):
@@ -107,6 +108,20 @@ def order_handler(msg):
     elif msg.typeName == 'openOrderEnd':
         g.order_resp['openOrderEnd'] = True
     log.debug('ORDER: {})'.format(msg))
+
+
+def contract_handler(msg):
+    """ Update our global to keep the latest ContractDetails available for API returns.
+    https://www.interactivebrokers.com/en/software/api/apiguide/java/contractdetails.htm
+
+    """
+    if msg.typeName in ['contractDetails', 'bondContractDetails']:
+        d = msg_to_dict(msg)
+        g.contract_resp[msg.typeName][msg.reqId] = d['contractDetails'].copy()
+        log.debug('CONTRACT: {}'.format(d))
+    elif msg.typeName == 'contractDetailsEnd':
+        g.contract_resp['contractDetailsEnd'] = True
+    log.debug('CONTRACT: {})'.format(msg))
 
 
 def error_handler(msg):

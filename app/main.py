@@ -160,7 +160,7 @@ class Order(Resource):
         return utils.make_response(sync.get_open_orders())
 
     def post(self):
-        """ Places an order with placeOrder().  This requires enough args to create a Contract & and Order:
+        """ Places an order with placeOrder().  This requires enough args to create a Contract & an Order:
         https://www.interactivebrokers.com/en/software/api/apiguide/java/java_socketclient_properties.htm
 
         To allow bracketed, a JSON list may be posted in the body with each list object being an order.  Arg
@@ -170,13 +170,14 @@ class Order(Resource):
         Note: This implies the JSON list starts with an order to open a position followed by 1-2 orders for closing
                 that position (profit taker, loss stopper)
 
+        Option orders with Combo Legs can also be made with an order dict in a JSON list with secType = 'BAG'
         """
         # Detect a JSON object being posted
         # Convert to not-unicode
         all_args = request.json
         all_args = json.dumps(all_args)
         all_args = json.loads(all_args, object_hook=utils.json_object_hook)
-
+        log.debug('all_args: {}'.format(all_args))
         # If there was no JSON object, then use query string params
         if all_args is None:
             parser = parsers.order_parser.copy()

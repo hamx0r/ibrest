@@ -7,6 +7,7 @@ import globals as g
 # from flask import g
 from ib.ext.Contract import Contract
 from ib.ext.Order import Order
+from ib.ext.ComboLeg import ComboLeg
 import time
 import logging
 
@@ -159,6 +160,9 @@ def place_order(order_list):
     * symbol
     * currency
     * exchange
+
+    When an object in `order_list` has secType = 'BAG', it implies an Options combo order will be placed, requiring
+    comboLegs: a JSON list of details required for this function to fetch the conId to then build the ComboLeg.
     """
     log.debug('Starting place_order with args_list: {}'.format(order_list))
     client = connection.get_client(0)
@@ -199,6 +203,47 @@ def place_order(order_list):
         for attr in dir(order):
             if attr[:2] == 'm_' and attr[2:] in args:
                 setattr(order, attr, args[attr[2:]])
+
+        # Option Combo Orders need the comboLegs details turned into actual ComboLeg objects
+        comboLegs = args.get('comboLegs', None)
+        if comboLegs:
+            # We need to build ComboLegs by first fetching the conId from the contract details
+            all_legs = []
+            req_ids = []
+            # Clear out our global ContractDetails so our handler can repopulate them
+            g.contract_resp['contractDetails'] = dict()
+            g.contract_resp['contractDetailsEnd'] = False
+
+            # Request new ContractDetails so we can get the conIds needed for our legs
+            for idx, leg in enumerate(comboLegs):
+                # Each leg is a dict of details needed to make a ComboLeg object
+                leg_contract = Contract()
+
+                # Populate leg_contract with appropriate args
+                for attr in dir(leg_contract):
+                    if attr[:2] == 'm_' and attr[2:] in leg:
+                        setattr(leg_contract, attr, leg[attr[2:]])
+
+                # Fetch conId for leg_contract
+                client.reqContractDetails(idx, leg_contract)
+                req_ids.append(idx)
+
+            # We've now requested ContractDetails for all legs.  Wait to get their async responses.
+            timeout = g.timeout
+            while g.contract_resp['contractDetailsEnd'] is False and client.isConnected() is True and timeout > 0:
+                time.sleep(0.25)
+                timeout -= 1
+
+            # Create our ComboLegs for our order
+            for idx, leg in enumerate(comboLegs):
+                combo_leg = ComboLeg()
+                # Populate combo_leg with appropriate args
+                for attr in dir(combo_leg):
+                    if attr[:2] == 'm_' and attr[2:] in leg:
+                        setattr(combo_leg, attr, leg[attr[2:]])
+                combo_leg.m_conId = g.contract_resp['contractDetails'][idx]['m_summary'].m_conId
+                all_legs.append(combo_leg)
+            contract.m_comboLegs = all_legs
 
         # If this is a bracketed order, we'll need to add in the parentId for children orders
         if parentId:
@@ -288,7 +333,6 @@ def place_order_oca(order_list):
         for attr in dir(order):
             if attr[:2] == 'm_' and attr[2:] in args:
                 setattr(order, attr, args[attr[2:]])
-
 
         # If this is a bracketed order, we'll need to add in the ocaGroup for children orders
         if ocaGroup:
