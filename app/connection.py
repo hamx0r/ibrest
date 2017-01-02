@@ -111,6 +111,7 @@ def setup_client(client):
     client.register(handlers.account_update_handler, 'UpdateAccountTime', 'UpdateAccountValue', 'UpdatePortfolio',
                     'AccountDownloadEnd')
     client.register(handlers.contract_handler, 'ContractDetails')
+    client.register(handlers.executions_handler, 'Execution')
     client.register(handlers.error_handler, 'Error')
     # Add handlers for feeds
     client.register(handlers.market_handler, 'TickSize', 'TickPrice')

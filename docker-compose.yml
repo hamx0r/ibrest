@@ -9,17 +9,17 @@ services:
       - IB_IbPassword
     ports:
       - "4003:4003"
-  proxy:
-    build:
-      context: .
-      dockerfile: proxy.Dockerfile
-    image: hamx0r/ibrest:proxy
-    container_name: ibproxy
-    restart: always
-    ports:
-      - "443:443"
-    links:
-    - ibrest0
+#  proxy:
+#    build:
+#      context: .
+#      dockerfile: proxy.Dockerfile
+#    image: hamx0r/ibrest:proxy
+#    container_name: ibproxy
+#    restart: always
+#    ports:
+#      - "443:443"
+#    links:
+#    - ibrest0
 #    - ibrest1
 #    - ibrest2
 #    - ibrest3
@@ -28,20 +28,23 @@ services:
 #    - ibrest6
 #    - ibrest7
   # These are all worker ibrest instances to be proxied
-  ibrest0:
+  ibrest:
     build:
       context: .
       dockerfile: Dockerfile
     image: hamx0r/ibrest:latest
-    container_name: ibrest0
+    container_name: ibrest
     restart: always
     environment:
       - ID_SECRET_KEY
       - IBGW_PORT_4003_TCP_ADDR=ibgw
       - IBGW_CLIENT_ID=0
       - IBREST_HOST=0.0.0.0
+      - IBREST_PORT=443
     links:
       - ibgw
+    ports:
+      - "443:443"
 #  ibrest1:
 #    image: hamx0r/ibrest:latest
 #    container_name: ibrest1

@@ -31,6 +31,9 @@ import requests
 from datetime import datetime
 from functools import wraps
 from ib.opt import ibConnection
+# database setup
+from database import init_db, FilledOrders
+init_db()
 
 __author__ = 'Jason Haury'
 
@@ -202,6 +205,25 @@ class Order(Resource):
         return utils.make_response(sync.cancel_order(args['orderId']))
 
 
+class OrderFilled(Resource):
+    """ Resource to get filled orders.
+    """
+    method_decorators = [authenticate]
+
+
+    def get(self, id=None):
+        """ Retrieves details of filled orders using stored data in SQLite DB
+        """
+        if id is None:
+            # Get all filled orders available
+            resp = FilledOrders.query.all()
+        else:
+            resp = FilledOrders.query.filter(FilledOrders.ib_id == id).first()
+        resp = resp.order_status
+        return utils.make_response(resp)
+
+
+
 class OrderOCA(Resource):
     """ Resource to handle requests for Bracket-like OCA Orders
 
@@ -293,6 +315,22 @@ class AccountUpdate(Resource):
         args = parser.parse_args()
         return utils.make_response(sync.get_account_update(args['acctCode']))
 
+class Executions(Resource):
+    """ Resource to handle requests for recent executions.
+    """
+    method_decorators = [authenticate]
+
+    def get(self):
+        """ Use optional filter params in querystring to retrieve execDetails from past 24hrs (IB API limitation):
+        https://www.interactivebrokers.com/en/software/api/apiguide/java/executionfilter.htm
+        """
+        # TODO create query string params for all filter options
+        args = None
+        return utils.make_response(sync.get_executions(args))
+
+
+
+
 
 class ClientStates(Resource):
     """ Explore what the connection states are for each client
@@ -347,9 +385,11 @@ api.add_resource(History, '/history/<string:symbol>')
 api.add_resource(Market, '/market/<string:symbol>')
 api.add_resource(Order, '/order')
 api.add_resource(OrderOCA, '/order/oca')
+api.add_resource(OrderFilled, '/order/filled/<int:id>')
 api.add_resource(PortfolioPositions, '/account/positions')
 api.add_resource(AccountSummary, '/account/summary')
 api.add_resource(AccountUpdate, '/account/update')
+api.add_resource(Executions, '/executions')
 api.add_resource(ClientStates, '/clients')
 api.add_resource(Beacon, '/beacon')
 api.add_resource(Test, '/test')
@@ -407,8 +447,8 @@ if __name__ == '__main__':
 
     DEBUG = False
     # For HTTPS with or without debugging
-    #app.run(debug=DEBUG, host=host, port=port, ssl_context=context, threaded=True)
-    app.run(debug=DEBUG, host=host, port=port)
+    app.run(debug=DEBUG, host=host, port=port, ssl_context=context)
+    # app.run(debug=DEBUG, host=host, port=port)
 
 
 

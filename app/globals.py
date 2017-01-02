@@ -51,6 +51,8 @@ contract_resp = dict(contractDetailsEnd=False, contractDetails=dict(), bondContr
 order_resp = dict(openOrderEnd=False, openOrder=[], orderStatus=[])
 # When placing/deleting orders, we care about what orderId is used.  Key off orderId.
 order_resp_by_order = dict()
+# Recent Executions
+executions_resp = dict(execDetailsEnd=False, execDetails=dict(), commissionReport=dict())
 
 
 # ---------------------------------------------------------------------

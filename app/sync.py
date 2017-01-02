@@ -8,6 +8,7 @@ import globals as g
 from ib.ext.Contract import Contract
 from ib.ext.Order import Order
 from ib.ext.ComboLeg import ComboLeg
+from ib.ext.ExecutionFilter import ExecutionFilter
 import time
 import logging
 
@@ -435,7 +436,7 @@ def get_account_update(acctCode):
         return g.error_resp[-1]
     client_id = client.clientId
     g.account_update_resp = dict(accountDownloadEnd=False, updateAccountValue=dict(), updatePortfolio=[])
-    log.debug('Requsting account updates for {}'.format(acctCode))
+    log.debug('Requesting account updates for {}'.format(acctCode))
     client.reqAccountUpdates(subscribe=False, acctCode=acctCode)
     timeout = g.timeout
     while g.account_update_resp['accountDownloadEnd'] is False and client.isConnected() is True and timeout > 0:
@@ -446,3 +447,27 @@ def get_account_update(acctCode):
     client.cancelAccountSummary(client_id)
     connection.close_client(client)
     return g.account_update_resp
+
+
+def get_executions(args=None):
+    """Gets all (filtered) executions from last 24hrs """
+    client = connection.get_client()
+    if client is None:
+        return g.error_resp[-2]
+    elif client.isConnected() is False:
+        return g.error_resp[-1]
+
+    g.executions_resp = dict(execDetailsEnd=False, execDetails=dict(), commissionReport=dict())
+    log.debug('Requesting executions for filter {}'.format(args))
+    # TODO use args to create filter here
+    filter = ExecutionFilter()
+    filter.m_clientId = 3
+    client.reqExecutions(1, filter)
+    timeout = g.timeout
+    while g.executions_resp['execDetailsEnd'] is False and client.isConnected() is True and timeout > 0:
+        # log.debug("Waiting for responses on client {}...".format(client.clientId))
+        time.sleep(.25)
+        timeout -= 1
+        log.debug('Current executions {}'.format(g.executions_resp))
+    connection.close_client(client)
+    return g.executions_resp
