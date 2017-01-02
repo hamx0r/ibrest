@@ -461,7 +461,7 @@ def get_executions(args=None):
     log.debug('Requesting executions for filter {}'.format(args))
     # TODO use args to create filter here
     filter = ExecutionFilter()
-    filter.m_clientId = 3
+    filter.m_clientId = 0
     client.reqExecutions(1, filter)
     timeout = g.timeout
     while g.executions_resp['execDetailsEnd'] is False and client.isConnected() is True and timeout > 0:

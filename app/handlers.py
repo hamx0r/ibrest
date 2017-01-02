@@ -9,7 +9,8 @@ from ib.ext.Order import Order
 from ib.ext.OrderState import OrderState
 from ib.ext.ContractDetails import ContractDetails
 from ib.ext.Execution import Execution
-from database import FilledOrders, db_session
+from ib.ext.CommissionReport import CommissionReport
+from database import FilledOrders, Commissions,  db_session
 import logging
 
 __author__ = 'Jason Haury'
@@ -27,7 +28,7 @@ def msg_to_dict(msg):
     """
     d = dict()
     for i in msg.items():
-        if isinstance(i[1], (Contract, Order, OrderState, ContractDetails, Execution)):
+        if isinstance(i[1], (Contract, Order, OrderState, ContractDetails, Execution, CommissionReport)):
             d[i[0]] = i[1].__dict__
         else:
             d[i[0]] = i[1]
@@ -141,6 +142,12 @@ def executions_handler(msg):
     if msg.typeName in ['execDetails', 'commissionReport']:
         d = msg_to_dict(msg)
         g.executions_resp[msg.typeName][msg.reqId] = d[msg.typeName].copy()
+
+        # Save all CommissionReports to SQLite DB
+        if msg.typeName == 'commissionReport':
+            commission_report = Commissions(msg.m_execId, json.dumps(d))
+            db_session.add(commission_report)
+            db_session.commit()
         log.debug('EXECUTIONS: {}'.format(d))
     elif msg.typeName == 'execDetailsEnd':
         g.contract_resp['execDetailsEnd'] = True

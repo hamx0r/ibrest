@@ -14,9 +14,9 @@ Base.query = db_session.query_property()
 # MODELS
 # ---------------------------------------------------------------------
 class FilledOrders(Base):
+    """ Once an order is filled, fill price, etc should be saved here """
     __tablename__ = 'filled_orders'
-    id = Column(Integer, primary_key=True)
-    ib_id = Column(Integer)
+    ib_id = Column(Integer, primary_key=True)
     order_status = Column(String)
 
     def __init__(self, ib_id=None, order_status=None):
@@ -25,6 +25,20 @@ class FilledOrders(Base):
 
     def __repr__(self):
         return '<IB OrderID {}>'.format(self.ib_id)
+
+
+class Commissions(Base):
+    """ Once an order is filled, fill price, etc should be saved here """
+    __tablename__ = 'commissions'
+    ib_id = Column(Integer, primary_key=True)
+    commission_report = Column(String)
+
+    def __init__(self, exec_id=None, commission_report=None):
+        self.exec_id = exec_id
+        self.commission_report = commission_report
+
+    def __repr__(self):
+        return '<IB ExecID {}>'.format(self.ib_id)
 
 
 
