@@ -110,7 +110,7 @@ def order_handler(msg):
         # Save all filled orders to SQLite DB
         if msg.typeName == 'orderStatus' and msg.status == 'Filled':
             filled_order = FilledOrders(msg.id, json.dumps(d))
-            db_session.add(filled_order)
+            db_session.merge(filled_order)
             db_session.commit()
 
 
@@ -146,7 +146,7 @@ def executions_handler(msg):
         # Save all CommissionReports to SQLite DB
         if msg.typeName == 'commissionReport':
             commission_report = Commissions(msg.m_execId, json.dumps(d))
-            db_session.add(commission_report)
+            db_session.merge(commission_report)
             db_session.commit()
         log.debug('EXECUTIONS: {}'.format(d))
     elif msg.typeName == 'execDetailsEnd':

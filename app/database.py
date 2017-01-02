@@ -16,11 +16,11 @@ Base.query = db_session.query_property()
 class FilledOrders(Base):
     """ Once an order is filled, fill price, etc should be saved here """
     __tablename__ = 'filled_orders'
-    ib_id = Column(Integer, primary_key=True)
+    order_id = Column(Integer, primary_key=True)
     order_status = Column(String)
 
-    def __init__(self, ib_id=None, order_status=None):
-        self.ib_id = ib_id
+    def __init__(self, order_id=None, order_status=None):
+        self.order_id = order_id
         self.order_status = order_status
 
     def __repr__(self):
@@ -30,7 +30,7 @@ class FilledOrders(Base):
 class Commissions(Base):
     """ Once an order is filled, fill price, etc should be saved here """
     __tablename__ = 'commissions'
-    ib_id = Column(Integer, primary_key=True)
+    exec_id = Column(Integer, primary_key=True)
     commission_report = Column(String)
 
     def __init__(self, exec_id=None, commission_report=None):

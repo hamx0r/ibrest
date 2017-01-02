@@ -32,7 +32,7 @@ from datetime import datetime
 from functools import wraps
 from ib.opt import ibConnection
 # database setup
-from database import init_db, FilledOrders
+from database import init_db, FilledOrders, Commissions
 init_db()
 
 __author__ = 'Jason Haury'
@@ -211,15 +211,21 @@ class OrderFilled(Resource):
     method_decorators = [authenticate]
 
 
-    def get(self, id=None):
+    def get(self):
         """ Retrieves details of filled orders using stored data in SQLite DB
         """
-        if id is None:
+        parser = reqparse.RequestParser(bundle_errors=True)
+        parser.add_argument('orderId', type=int, required=False,
+                            help='Order ID to get ExecutionReport for')
+        args = parser.parse_args()
+        orderId = args.get('orderId')
+
+        if orderId is None:
             # Get all filled orders available
             resp = FilledOrders.query.all()
         else:
-            resp = FilledOrders.query.filter(FilledOrders.ib_id == id).first()
-        resp = resp.order_status
+            resp = FilledOrders.query.filter(FilledOrders.order_id == orderId).first()
+        resp = [r.order_status for r in resp]
         return utils.make_response(resp)
 
 
@@ -329,6 +335,29 @@ class Executions(Resource):
         return utils.make_response(sync.get_executions(args))
 
 
+class ExecutionCommissions(Resource):
+    """ Resource to get CommissionReports from past executions.  No guarantee as DB is wiped every time docker container
+    is created.
+    """
+    method_decorators = [authenticate]
+
+    def get(self, execId=None):
+        """ Retrieves details of filled orders using stored data in SQLite DB
+        """
+        parser = reqparse.RequestParser(bundle_errors=True)
+        parser.add_argument('execId', type=int, required=False,
+                            help='Execution ID to get CommissionReport for')
+        args = parser.parse_args()
+        execId = args.get('execId')
+
+        if execId is None:
+            # Get all filled orders available
+            resp = Commissions.query.all()
+        else:
+            resp = Commissions.query.filter(Commissions.exec_id == execId).first()
+        resp = [r.commission_report for r in resp]
+        return utils.make_response(resp)
+
 
 
 
@@ -385,11 +414,12 @@ api.add_resource(History, '/history/<string:symbol>')
 api.add_resource(Market, '/market/<string:symbol>')
 api.add_resource(Order, '/order')
 api.add_resource(OrderOCA, '/order/oca')
-api.add_resource(OrderFilled, '/order/filled/<int:id>')
+api.add_resource(OrderFilled, '/order/filled')
 api.add_resource(PortfolioPositions, '/account/positions')
 api.add_resource(AccountSummary, '/account/summary')
 api.add_resource(AccountUpdate, '/account/update')
 api.add_resource(Executions, '/executions')
+api.add_resource(ExecutionCommissions, '/executions/commissions')
 api.add_resource(ClientStates, '/clients')
 api.add_resource(Beacon, '/beacon')
 api.add_resource(Test, '/test')
