@@ -312,7 +312,7 @@ def place_order_oca(order_list):
     order_ids = set()
     dont_wait_order_ids = set()  # Some orders aren't worth waiting for responses on
     for args in order_list:
-        # If an orderId was provided, we'll be updating an existing order, so only send attributes which are updatable:
+        # If an orderId was provided, we'll be updating an existing order, so only send attributes which are updateable:
         # totalQuantity, orderType, symbol, secType, action
         # TODO consider casting unicode to utf-8 here.  Otherwise we get error(id=1, errorCode=512, errorMsg=Order Sending Error - char format require string of length 1)
         # log.debug('Processing args from order_list: {}'.format(args))
@@ -449,7 +449,7 @@ def get_account_update(acctCode):
     return g.account_update_resp
 
 
-def get_executions(args=None):
+def get_executions(args):
     """Gets all (filtered) executions from last 24hrs """
     client = connection.get_client()
     if client is None:
@@ -457,13 +457,16 @@ def get_executions(args=None):
     elif client.isConnected() is False:
         return g.error_resp[-1]
 
-    g.executions_resp = dict(execDetailsEnd=False, execDetails=dict(), commissionReport=dict())
+    g.executions_resp = dict(execDetailsEnd=False, execDetails=[], commissionReport=dict())
     log.debug('Requesting executions for filter {}'.format(args))
-    # TODO use args to create filter here
     filter = ExecutionFilter()
+    for attr in dir(filter):
+        if attr[:2] == 'm_' and attr[2:] in args:
+            setattr(filter, attr, args[attr[2:]])
+    log.debug('Filter: {}'.format(filter.__dict__))
     filter.m_clientId = 0
     client.reqExecutions(1, filter)
-    timeout = g.timeout
+    timeout = g.timeout / 2
     while g.executions_resp['execDetailsEnd'] is False and client.isConnected() is True and timeout > 0:
         # log.debug("Waiting for responses on client {}...".format(client.clientId))
         time.sleep(.25)

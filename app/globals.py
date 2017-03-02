@@ -12,6 +12,7 @@ __author__ = 'Jason Haury'
 # Use environment variables
 ibgw_host = os.getenv('IBGW_PORT_4003_TCP_ADDR', os.getenv('IBGW_HOST', '127.0.0.1'))
 ibgw_port = int(os.getenv('IBGW_PORT_4003_TCP_PORT', os.getenv('IBGW_PORT', '4003')))  # Use 7496 for TWS
+client_id = int(os.getenv('IBGW_CLIENT_ID', 0))  # Use a unique value for each IBREST instance you connect to same TWS
 
 # Beacon globals
 id_secret_key = os.getenv('ID_SECRET_KEY', None)
@@ -52,7 +53,7 @@ order_resp = dict(openOrderEnd=False, openOrder=[], orderStatus=[])
 # When placing/deleting orders, we care about what orderId is used.  Key off orderId.
 order_resp_by_order = dict()
 # Recent Executions
-executions_resp = dict(execDetailsEnd=False, execDetails=dict(), commissionReport=dict())
+executions_resp = dict(execDetailsEnd=False, execDetails=[], commissionReport=dict())
 
 
 # ---------------------------------------------------------------------

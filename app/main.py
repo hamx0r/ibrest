@@ -330,8 +330,15 @@ class Executions(Resource):
         """ Use optional filter params in querystring to retrieve execDetails from past 24hrs (IB API limitation):
         https://www.interactivebrokers.com/en/software/api/apiguide/java/executionfilter.htm
         """
-        # TODO create query string params for all filter options
-        args = None
+        parser = reqparse.RequestParser()
+        parser.add_argument('acctCode', type=str, help='Account number/code to Filter', trim=True, required=False)
+        parser.add_argument('clientId', type=str, help='Client ID to Filter', trim=True, required=False)
+        parser.add_argument('exchange', type=str, help='Exhange to Filter', trim=True, required=False)
+        parser.add_argument('secType', type=str, help='Security Type to Filter', trim=True, required=False)
+        parser.add_argument('side', type=str, help='Side to Filter', trim=True, required=False)
+        parser.add_argument('time', type=str, help='Time (yyyymmdd-hh:mm:ss) to Filter', trim=True, required=False)
+
+        args = parser.parse_args()
         return utils.make_response(sync.get_executions(args))
 
 
@@ -401,10 +408,15 @@ class Test(Resource):
         return resp
 
 
-@app.route("/")
-def hello():
-    return "Hello World!  These clients are connected to IBGW {}".format(
-        [(id, c.isConnected()) for id, c in g.client_pool.iteritems()])
+# @app.route("/")
+# def hello():
+#     return "Hello World!  These clients are connected to IBGW {}".format(
+#         [(id, c.isConnected()) for id, c in g.client_pool.iteritems()])
+
+class Hello(Resource):
+    def get(self):
+        return dict(msg='Hello World!  These clients are connected to IBGW',
+                    clients=[(id, c.isConnected()) for id, c in g.client_pool.iteritems()])
 
 
 # ---------------------------------------------------------------------
@@ -423,6 +435,7 @@ api.add_resource(ExecutionCommissions, '/executions/commissions')
 api.add_resource(ClientStates, '/clients')
 api.add_resource(Beacon, '/beacon')
 api.add_resource(Test, '/test')
+api.add_resource(Hello, '/')
 
 # ---------------------------------------------------------------------
 # SETUP CLIENTS

@@ -111,11 +111,15 @@ def setup_client(client):
     client.register(handlers.account_update_handler, 'UpdateAccountTime', 'UpdateAccountValue', 'UpdatePortfolio',
                     'AccountDownloadEnd')
     client.register(handlers.contract_handler, 'ContractDetails')
-    client.register(handlers.executions_handler, 'Execution')
+    client.register(handlers.executions_handler, 'ExecDetails', 'ExecDetailsEnd', 'CommissionsReport')
     client.register(handlers.error_handler, 'Error')
     # Add handlers for feeds
     client.register(handlers.market_handler, 'TickSize', 'TickPrice')
-    # Be sure we're in a disconnected states
+
+    # For easier debugging, register all messages with the generic handler
+    # client.registerAll(handlers.generic_handler)
+
+    # Be sure we're in a disconnected state
     client.disconnect()
 
 

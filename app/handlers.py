@@ -141,16 +141,17 @@ def executions_handler(msg):
     """
     if msg.typeName in ['execDetails', 'commissionReport']:
         d = msg_to_dict(msg)
-        g.executions_resp[msg.typeName][msg.reqId] = d[msg.typeName].copy()
-
+        log.debug('Dictified msg: {}'.format(d))
+        if msg.typeName == 'execDetails':
+            g.executions_resp[msg.typeName].append(dict(execution=d['execution'].copy(), contract=d['contract'].copy()))
         # Save all CommissionReports to SQLite DB
-        if msg.typeName == 'commissionReport':
+        elif msg.typeName == 'commissionReport':
             commission_report = Commissions(msg.m_execId, json.dumps(d))
             db_session.merge(commission_report)
             db_session.commit()
         log.debug('EXECUTIONS: {}'.format(d))
     elif msg.typeName == 'execDetailsEnd':
-        g.contract_resp['execDetailsEnd'] = True
+        g.executions_resp['execDetailsEnd'] = True
     log.debug('EXECUTIONS: {})'.format(msg))
 
 

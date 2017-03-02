@@ -19,15 +19,15 @@ RUN pip install --upgrade pip
 COPY requirements.txt /
 RUN pip install -r /requirements.txt
 
-#TODO for production, do this:
+# for production, do this:
 COPY ./app /app
-#TODO for development, do this instead:
+# for development, do this instead:
 #VOLUME /app
 
 WORKDIR /app
 
 # To enable HTTPS, we need to copy certs
-# TODO be sure to create your certs!
+# be sure to create your certs!
 COPY ./etc/ibrest.crt .
 COPY ./etc/ibrest.key .
 # RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./ibrest.key -out ./ibrest.crt -new -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN=www.example.com"
