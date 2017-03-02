@@ -7,6 +7,8 @@ import globals as g
 # from flask import g
 from ib.ext.Contract import Contract
 from ib.ext.Order import Order
+from ib.ext.ComboLeg import ComboLeg
+from ib.ext.ExecutionFilter import ExecutionFilter
 import time
 import logging
 
@@ -159,6 +161,9 @@ def place_order(order_list):
     * symbol
     * currency
     * exchange
+
+    When an object in `order_list` has secType = 'BAG', it implies an Options combo order will be placed, requiring
+    comboLegs: a JSON list of details required for this function to fetch the conId to then build the ComboLeg.
     """
     log.debug('Starting place_order with args_list: {}'.format(order_list))
     client = connection.get_client(0)
@@ -199,6 +204,47 @@ def place_order(order_list):
         for attr in dir(order):
             if attr[:2] == 'm_' and attr[2:] in args:
                 setattr(order, attr, args[attr[2:]])
+
+        # Option Combo Orders need the comboLegs details turned into actual ComboLeg objects
+        comboLegs = args.get('comboLegs', None)
+        if comboLegs:
+            # We need to build ComboLegs by first fetching the conId from the contract details
+            all_legs = []
+            req_ids = []
+            # Clear out our global ContractDetails so our handler can repopulate them
+            g.contract_resp['contractDetails'] = dict()
+            g.contract_resp['contractDetailsEnd'] = False
+
+            # Request new ContractDetails so we can get the conIds needed for our legs
+            for idx, leg in enumerate(comboLegs):
+                # Each leg is a dict of details needed to make a ComboLeg object
+                leg_contract = Contract()
+
+                # Populate leg_contract with appropriate args
+                for attr in dir(leg_contract):
+                    if attr[:2] == 'm_' and attr[2:] in leg:
+                        setattr(leg_contract, attr, leg[attr[2:]])
+
+                # Fetch conId for leg_contract
+                client.reqContractDetails(idx, leg_contract)
+                req_ids.append(idx)
+
+            # We've now requested ContractDetails for all legs.  Wait to get their async responses.
+            timeout = g.timeout
+            while g.contract_resp['contractDetailsEnd'] is False and client.isConnected() is True and timeout > 0:
+                time.sleep(0.25)
+                timeout -= 1
+
+            # Create our ComboLegs for our order
+            for idx, leg in enumerate(comboLegs):
+                combo_leg = ComboLeg()
+                # Populate combo_leg with appropriate args
+                for attr in dir(combo_leg):
+                    if attr[:2] == 'm_' and attr[2:] in leg:
+                        setattr(combo_leg, attr, leg[attr[2:]])
+                combo_leg.m_conId = g.contract_resp['contractDetails'][idx]['m_summary'].m_conId
+                all_legs.append(combo_leg)
+            contract.m_comboLegs = all_legs
 
         # If this is a bracketed order, we'll need to add in the parentId for children orders
         if parentId:
@@ -266,7 +312,7 @@ def place_order_oca(order_list):
     order_ids = set()
     dont_wait_order_ids = set()  # Some orders aren't worth waiting for responses on
     for args in order_list:
-        # If an orderId was provided, we'll be updating an existing order, so only send attributes which are updatable:
+        # If an orderId was provided, we'll be updating an existing order, so only send attributes which are updateable:
         # totalQuantity, orderType, symbol, secType, action
         # TODO consider casting unicode to utf-8 here.  Otherwise we get error(id=1, errorCode=512, errorMsg=Order Sending Error - char format require string of length 1)
         # log.debug('Processing args from order_list: {}'.format(args))
@@ -288,7 +334,6 @@ def place_order_oca(order_list):
         for attr in dir(order):
             if attr[:2] == 'm_' and attr[2:] in args:
                 setattr(order, attr, args[attr[2:]])
-
 
         # If this is a bracketed order, we'll need to add in the ocaGroup for children orders
         if ocaGroup:
@@ -391,7 +436,7 @@ def get_account_update(acctCode):
         return g.error_resp[-1]
     client_id = client.clientId
     g.account_update_resp = dict(accountDownloadEnd=False, updateAccountValue=dict(), updatePortfolio=[])
-    log.debug('Requsting account updates for {}'.format(acctCode))
+    log.debug('Requesting account updates for {}'.format(acctCode))
     client.reqAccountUpdates(subscribe=False, acctCode=acctCode)
     timeout = g.timeout
     while g.account_update_resp['accountDownloadEnd'] is False and client.isConnected() is True and timeout > 0:
@@ -402,3 +447,30 @@ def get_account_update(acctCode):
     client.cancelAccountSummary(client_id)
     connection.close_client(client)
     return g.account_update_resp
+
+
+def get_executions(args):
+    """Gets all (filtered) executions from last 24hrs """
+    client = connection.get_client()
+    if client is None:
+        return g.error_resp[-2]
+    elif client.isConnected() is False:
+        return g.error_resp[-1]
+
+    g.executions_resp = dict(execDetailsEnd=False, execDetails=[], commissionReport=dict())
+    log.debug('Requesting executions for filter {}'.format(args))
+    filter = ExecutionFilter()
+    for attr in dir(filter):
+        if attr[:2] == 'm_' and attr[2:] in args:
+            setattr(filter, attr, args[attr[2:]])
+    log.debug('Filter: {}'.format(filter.__dict__))
+    filter.m_clientId = 0
+    client.reqExecutions(1, filter)
+    timeout = g.timeout / 2
+    while g.executions_resp['execDetailsEnd'] is False and client.isConnected() is True and timeout > 0:
+        # log.debug("Waiting for responses on client {}...".format(client.clientId))
+        time.sleep(.25)
+        timeout -= 1
+        log.debug('Current executions {}'.format(g.executions_resp))
+    connection.close_client(client)
+    return g.executions_resp

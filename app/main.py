@@ -30,6 +30,10 @@ import connection
 import requests
 from datetime import datetime
 from functools import wraps
+from ib.opt import ibConnection
+# database setup
+from database import init_db, FilledOrders, Commissions
+init_db()
 
 __author__ = 'Jason Haury'
 
@@ -64,9 +68,9 @@ def authenticate(func):
 
         ibrest_info = g.serializer.loads(flare)
         authorized = False
-        if ibrest_info['ip'] == g.current_ip:
-            if ibrest_info['token'] in [g.beacon_current_token, g.beacon_last_token]:
-                authorized = True
+        # if ibrest_info['ip'] == g.current_ip:
+        if ibrest_info['token'] in [g.beacon_current_token, g.beacon_last_token]:
+            authorized = True
 
         log.debug('Authorized = {}'.format(authorized))
         if authorized:
@@ -97,14 +101,15 @@ def send_flare_to_gae():
 
     # We want to tell GAE our IP address too
     # curl -H "Metadata-Flavor: Google" http://metadata/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip
-    headers = {'Metadata-Flavor': 'Google'}
-    metadata_url = "http://metadata/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip"
-    ip = requests.get(metadata_url, headers=headers).text
-    if ip is not None:
-        g.current_ip = ip
+    # headers = {'Metadata-Flavor': 'Google'}
+    # metadata_url = "http://metadata/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip"
+    # ip = requests.get(metadata_url, headers=headers).text
+    # if ip is not None:
+    #     g.current_ip = ip
 
     # set up a response for be encrypted & signed
-    resp = {'ip': ip, 'token': token}
+    # resp = {'ip': ip, 'token': token}
+    resp = {'token': token}
     # Now sign it, seal it...:
     flare = g.serializer.dumps(resp)
     resp['payload'] = flare
@@ -158,7 +163,7 @@ class Order(Resource):
         return utils.make_response(sync.get_open_orders())
 
     def post(self):
-        """ Places an order with placeOrder().  This requires enough args to create a Contract & and Order:
+        """ Places an order with placeOrder().  This requires enough args to create a Contract & an Order:
         https://www.interactivebrokers.com/en/software/api/apiguide/java/java_socketclient_properties.htm
 
         To allow bracketed, a JSON list may be posted in the body with each list object being an order.  Arg
@@ -168,13 +173,14 @@ class Order(Resource):
         Note: This implies the JSON list starts with an order to open a position followed by 1-2 orders for closing
                 that position (profit taker, loss stopper)
 
+        Option orders with Combo Legs can also be made with an order dict in a JSON list with secType = 'BAG'
         """
         # Detect a JSON object being posted
         # Convert to not-unicode
         all_args = request.json
         all_args = json.dumps(all_args)
         all_args = json.loads(all_args, object_hook=utils.json_object_hook)
-
+        log.debug('all_args: {}'.format(all_args))
         # If there was no JSON object, then use query string params
         if all_args is None:
             parser = parsers.order_parser.copy()
@@ -197,6 +203,31 @@ class Order(Resource):
                             help='Order ID to cancel')
         args = parser.parse_args()
         return utils.make_response(sync.cancel_order(args['orderId']))
+
+
+class OrderFilled(Resource):
+    """ Resource to get filled orders.
+    """
+    method_decorators = [authenticate]
+
+
+    def get(self):
+        """ Retrieves details of filled orders using stored data in SQLite DB
+        """
+        parser = reqparse.RequestParser(bundle_errors=True)
+        parser.add_argument('orderId', type=int, required=False,
+                            help='Order ID to get ExecutionReport for')
+        args = parser.parse_args()
+        orderId = args.get('orderId')
+
+        if orderId is None:
+            # Get all filled orders available
+            resp = FilledOrders.query.all()
+        else:
+            resp = FilledOrders.query.filter(FilledOrders.order_id == orderId).first()
+        resp = [r.order_status for r in resp]
+        return utils.make_response(resp)
+
 
 
 class OrderOCA(Resource):
@@ -290,17 +321,61 @@ class AccountUpdate(Resource):
         args = parser.parse_args()
         return utils.make_response(sync.get_account_update(args['acctCode']))
 
-
-class ClientStates(Resource):
-    """ Explore what the connection states are for each client
+class Executions(Resource):
+    """ Resource to handle requests for recent executions.
     """
     method_decorators = [authenticate]
 
     def get(self):
-        resp = dict(connected=dict(), available=dict())
-        for id, client in g.client_pool.iteritems():
-            resp['connected'][id] = client.isConnected() if client is not None else None
-        resp['available'] = g.clientId_pool
+        """ Use optional filter params in querystring to retrieve execDetails from past 24hrs (IB API limitation):
+        https://www.interactivebrokers.com/en/software/api/apiguide/java/executionfilter.htm
+        """
+        parser = reqparse.RequestParser()
+        parser.add_argument('acctCode', type=str, help='Account number/code to Filter', trim=True, required=False)
+        parser.add_argument('clientId', type=str, help='Client ID to Filter', trim=True, required=False)
+        parser.add_argument('exchange', type=str, help='Exhange to Filter', trim=True, required=False)
+        parser.add_argument('secType', type=str, help='Security Type to Filter', trim=True, required=False)
+        parser.add_argument('side', type=str, help='Side to Filter', trim=True, required=False)
+        parser.add_argument('time', type=str, help='Time (yyyymmdd-hh:mm:ss) to Filter', trim=True, required=False)
+
+        args = parser.parse_args()
+        return utils.make_response(sync.get_executions(args))
+
+
+class ExecutionCommissions(Resource):
+    """ Resource to get CommissionReports from past executions.  No guarantee as DB is wiped every time docker container
+    is created.
+    """
+    method_decorators = [authenticate]
+
+    def get(self, execId=None):
+        """ Retrieves details of filled orders using stored data in SQLite DB
+        """
+        parser = reqparse.RequestParser(bundle_errors=True)
+        parser.add_argument('execId', type=int, required=False,
+                            help='Execution ID to get CommissionReport for')
+        args = parser.parse_args()
+        execId = args.get('execId')
+
+        if execId is None:
+            # Get all filled orders available
+            resp = Commissions.query.all()
+        else:
+            resp = Commissions.query.filter(Commissions.exec_id == execId).first()
+        resp = [r.commission_report for r in resp]
+        return utils.make_response(resp)
+
+
+
+
+class ClientState(Resource):
+    """ Explore what the connection state for client connection to TWS
+    """
+    method_decorators = [authenticate]
+
+    def get(self):
+        resp = dict(connected=dict())
+        resp['connected'][g.client_id] = g.client_connection.isConnected()
         return utils.make_response(resp)
 
 
@@ -325,17 +400,17 @@ class Beacon(Resource):
 
 class Test(Resource):
     def get(self):
-        resp = ""
-        for k, v in request.environ.iteritems():
-            resp += "{}: {}".format(str(k), str(v))
-        print request.environ.items()
+        resp = {k: str(v) for k, v in request.environ.iteritems()}
+
+        log.debug('Environment vars: {}'.format(resp))
         return resp
 
 
-@app.route("/")
-def hello():
-    return "Hello World!  These clients are connected to IBGW {}".format(
-        [(c, g.client_pool[c].isConnected()) for c in xrange(8)])
+class Hello(Resource):
+    def get(self):
+        return dict(msg="Hello World!  Here's info on the client used to connect to IBGW",
+                    clientId=g.client_id,
+                    connected=g.client_connection.isConnected())
 
 
 # ---------------------------------------------------------------------
@@ -345,36 +420,42 @@ api.add_resource(History, '/history/<string:symbol>')
 api.add_resource(Market, '/market/<string:symbol>')
 api.add_resource(Order, '/order')
 api.add_resource(OrderOCA, '/order/oca')
+api.add_resource(OrderFilled, '/order/filled')
 api.add_resource(PortfolioPositions, '/account/positions')
 api.add_resource(AccountSummary, '/account/summary')
 api.add_resource(AccountUpdate, '/account/update')
-api.add_resource(ClientStates, '/clients')
+api.add_resource(Executions, '/executions')
+api.add_resource(ExecutionCommissions, '/executions/commissions')
+api.add_resource(ClientState, '/clients')
 api.add_resource(Beacon, '/beacon')
 api.add_resource(Test, '/test')
+api.add_resource(Hello, '/')
 
 # ---------------------------------------------------------------------
 # SETUP CLIENTS
 # ---------------------------------------------------------------------
 
 
-log.debug('Using IB GW client at: {}:{}'.format(g.client_pool[0].host, g.client_pool[0].port))
-# Connect to all clients in our pool
-for c in [0] + g.clientId_pool:  # +1 for Order client
-    client = g.client_pool[c]
-    connection.setup_client(client)
-    # TODO use gevent to time.sleeps are non blocking
-    time.sleep(1)
-    client.connect()
-    log.debug('Client {} connected? {}'.format(c, client.isConnected()))
-    g.client_pool[c] = client
-
-# Call our own beacon code to register with GAE
-if g.serializer is not None:
-    log.debug('Sent flare to GAE with response: {}'.format(send_flare_to_gae()))
+log.debug('Using IB GW client at: {}:{}'.format(g.client_connection.host, g.client_connection.port))
 
 if __name__ == '__main__':
     host = os.getenv('IBREST_HOST', '127.0.0.1')
-    port = int(os.getenv('IBREST_PORT', '5000'))
+    port = int(os.getenv('IBREST_PORT', '80'))
+    client_id = g.client_id
+
+    # Set up our client connection with IBGW
+    client = ibConnection(g.ibgw_host, g.ibgw_port, client_id)
+    connection.setup_client(client)
+    client.connect()
+    g.client_connection = client
+    # g.clientId_pool = [client_id]
+
+    # Call our own beacon code to register with GAE
+    if g.serializer is not None:
+        log.debug('Sent flare to GAE with response: {}'.format(send_flare_to_gae()))
+    else:
+        log.debug('No beacon flare sent.  No ID_SECRET_KEY found in environment: {}.  Client ID: {}'.format(os.getenv('ID_SECRET_KEY'), client_id))
+
 
     # When runnning with werkzeug, we already get good logging to stdout, so disabble loggers
     # root.setLevel(logging.ERROR)
@@ -383,16 +464,19 @@ if __name__ == '__main__':
 
     # Log to file to since Docker isn't doing it for use
     # Add rotating file log handler
-    from logging.handlers import TimedRotatingFileHandler
+    # from logging.handlers import TimedRotatingFileHandler
+    #
+    # hdlr_file = TimedRotatingFileHandler('ibrest.log', when='D', backupCount=5)
+    # hdlr_file.setLevel(logging.DEBUG)
+    # hdlr_file.setFormatter(logging.Formatter(log_format))
+    # logging.getLogger().addHandler(hdlr_file)
 
-    hdlr_file = TimedRotatingFileHandler('ibrest.log', when='D', backupCount=5)
-    hdlr_file.setLevel(logging.DEBUG)
-    hdlr_file.setFormatter(logging.Formatter(log_format))
-    logging.getLogger().addHandler(hdlr_file)
+
 
     DEBUG = False
     # For HTTPS with or without debugging
-    app.run(debug=DEBUG, host=host, port=port, ssl_context=context, threaded=True)
+    app.run(debug=DEBUG, host=host, port=port, ssl_context=context)
+    # app.run(debug=DEBUG, host=host, port=port)
 
 
 
