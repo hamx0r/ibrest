@@ -24,11 +24,11 @@ current_ip = None
 timeout = 20  # Max loops
 
 # Mutables
-managedAccounts = []
+managedAccounts = set()
 # TODO use single clientId
-clientId_pool = range(1, 8)  # Round-robbin list of clientId's for non-Order tasks.  ID 0 is for orders
-clientId_order_in_use = False
-client_pool = {c: ibConnection(ibgw_host, ibgw_port, c) for c in [0]+clientId_pool}  # +1 for Order client
+# clientId_pool = range(1, 8)  # Round-robbin list of clientId's for non-Order tasks.  ID 0 is for orders
+clientId_in_use = False
+client_pool = {client_id: ibConnection(ibgw_host, ibgw_port, client_id)}  # +1 for Order client
 getting_order_id = False
 orderId = 0
 tickerId = 0
@@ -38,8 +38,8 @@ tickerId = 0
 # SYNCHRONOUS RESPONSES
 # ---------------------------------------------------------------------
 # Responses.  Global dicts to use for our responses as updated by Message handlers, keyed by clientId
-portfolio_positions_resp = {c: dict() for c in xrange(len(clientId_pool)+1)}
-account_summary_resp = {c: dict(accountSummaryEnd=False) for c in xrange(len(clientId_pool)+1)}
+portfolio_positions_resp = {client_id: dict()}
+account_summary_resp = {client_id: dict(accountSummaryEnd=False)}
 account_update_resp = dict(accountDownloadEnd=False, updateAccountValue=dict(), updatePortfolio=[])
 # Track errors keyed in "id" which is the orderId or tickerId (or -1 for connection errors)
 error_resp = {-1: {"errorCode": 502, "errorMsg": "Couldn't connect to TWS.  Confirm that \"Enable ActiveX and Socket "

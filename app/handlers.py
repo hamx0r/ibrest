@@ -47,7 +47,7 @@ def connection_handler(msg):
         # g.getting_order_id = False  # Unlock place_order() to now be called again.
         log.info('Updated orderID: {}'.format(g.orderId))
     elif msg.typeName == 'managedAccounts':
-        g.managedAccounts = msg.accountsList.split(',')
+        g.managedAccounts = set(msg.accountsList.split(','))
         log.debug('Updated managed accounts: {}'.format(g.managedAccounts))
 
 

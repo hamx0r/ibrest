@@ -408,15 +408,11 @@ class Test(Resource):
         return resp
 
 
-# @app.route("/")
-# def hello():
-#     return "Hello World!  These clients are connected to IBGW {}".format(
-#         [(id, c.isConnected()) for id, c in g.client_pool.iteritems()])
-
 class Hello(Resource):
     def get(self):
-        return dict(msg='Hello World!  These clients are connected to IBGW',
-                    clients=[(id, c.isConnected()) for id, c in g.client_pool.iteritems()])
+        return dict(msg="Hello World!  Here's info on the client used to connect to IBGW",
+                    clientId=g.client_id,
+                    connected=g.client_pool[g.client_id].isConnected())
 
 
 # ---------------------------------------------------------------------
@@ -456,17 +452,17 @@ log.debug('Using IB GW client at: {}:{}'.format(g.client_pool[0].host, g.client_
 if __name__ == '__main__':
     host = os.getenv('IBREST_HOST', '127.0.0.1')
     port = int(os.getenv('IBREST_PORT', '80'))
-    client_id = int(os.getenv('IBGW_CLIENT_ID', 0))
+    client_id = g.client_id
 
     # Set up our client connection with IBGW
     client = ibConnection(g.ibgw_host, g.ibgw_port, client_id)
     connection.setup_client(client)
     client.connect()
     g.client_pool = {client_id: client}
-    g.clientId_pool = [client_id]
+    # g.clientId_pool = [client_id]
 
     # Call our own beacon code to register with GAE
-    if g.serializer is not None and client_id == 0:
+    if g.serializer is not None:
         log.debug('Sent flare to GAE with response: {}'.format(send_flare_to_gae()))
     else:
         log.debug('No beacon flare sent.  No ID_SECRET_KEY found in environment: {}.  Client ID: {}'.format(os.getenv('ID_SECRET_KEY'), client_id))
