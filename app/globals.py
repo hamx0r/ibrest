@@ -26,9 +26,8 @@ timeout = 20  # Max loops
 # Mutables
 managedAccounts = set()
 # TODO use single clientId
-# clientId_pool = range(1, 8)  # Round-robbin list of clientId's for non-Order tasks.  ID 0 is for orders
 clientId_in_use = False
-client_pool = {client_id: ibConnection(ibgw_host, ibgw_port, client_id)}  # +1 for Order client
+client_connection = ibConnection(ibgw_host, ibgw_port, client_id)
 getting_order_id = False
 orderId = 0
 tickerId = 0

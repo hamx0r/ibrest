@@ -368,16 +368,14 @@ class ExecutionCommissions(Resource):
 
 
 
-class ClientStates(Resource):
-    """ Explore what the connection states are for each client
+class ClientState(Resource):
+    """ Explore what the connection state for client connection to TWS
     """
     method_decorators = [authenticate]
 
     def get(self):
-        resp = dict(connected=dict(), available=dict())
-        for id, client in g.client_pool.iteritems():
-            resp['connected'][id] = client.isConnected() if client is not None else None
-        resp['available'] = g.clientId_pool
+        resp = dict(connected=dict())
+        resp['connected'][g.client_id] = g.client_connection.isConnected()
         return utils.make_response(resp)
 
 
@@ -412,7 +410,7 @@ class Hello(Resource):
     def get(self):
         return dict(msg="Hello World!  Here's info on the client used to connect to IBGW",
                     clientId=g.client_id,
-                    connected=g.client_pool[g.client_id].isConnected())
+                    connected=g.client_connection.isConnected())
 
 
 # ---------------------------------------------------------------------
@@ -428,7 +426,7 @@ api.add_resource(AccountSummary, '/account/summary')
 api.add_resource(AccountUpdate, '/account/update')
 api.add_resource(Executions, '/executions')
 api.add_resource(ExecutionCommissions, '/executions/commissions')
-api.add_resource(ClientStates, '/clients')
+api.add_resource(ClientState, '/clients')
 api.add_resource(Beacon, '/beacon')
 api.add_resource(Test, '/test')
 api.add_resource(Hello, '/')
@@ -438,16 +436,7 @@ api.add_resource(Hello, '/')
 # ---------------------------------------------------------------------
 
 
-log.debug('Using IB GW client at: {}:{}'.format(g.client_pool[0].host, g.client_pool[0].port))
-# Connect to all clients in our pool
-# for c in [0] + g.clientId_pool:  # +1 for Order client
-#     client = g.client_pool[c]
-#     connection.setup_client(client)
-#     # TODO use gevent to time.sleeps are non blocking
-#     time.sleep(1)
-#     client.connect()
-#     log.debug('Client {} connected? {}'.format(c, client.isConnected()))
-#     g.client_pool[c] = client
+log.debug('Using IB GW client at: {}:{}'.format(g.client_connection.host, g.client_connection.port))
 
 if __name__ == '__main__':
     host = os.getenv('IBREST_HOST', '127.0.0.1')
@@ -458,7 +447,7 @@ if __name__ == '__main__':
     client = ibConnection(g.ibgw_host, g.ibgw_port, client_id)
     connection.setup_client(client)
     client.connect()
-    g.client_pool = {client_id: client}
+    g.client_connection = client
     # g.clientId_pool = [client_id]
 
     # Call our own beacon code to register with GAE

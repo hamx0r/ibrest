@@ -26,7 +26,7 @@ def get_client():
         time.sleep(0.5)
         timeout -= 1
 
-    client = g.client_pool[g.client_id]
+    client = g.client_connection
 
     # Enable logging if we're in debug mode
     if current_app.debug is True:
@@ -40,7 +40,7 @@ def get_client():
         client.connect()
         # If we failed to reconnect, be sure to put our client ID back in the pool
         if client.isConnected() is False:
-            g.clientId_pool.append(g.client_id)
+            raise Exception('Client cannot connect')
     return client
 
 
