@@ -3,3 +3,4 @@ itsdangerous
 # use older requests to avoid error messages
 requests==2.5.3
 #ib is not on PyPi, but can be found in lib folder https://github.com/blampe/IbPy
+sqlalchemy

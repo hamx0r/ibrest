@@ -1,19 +1,23 @@
 """ Needs documentation
 """
 import globals as g
-import os
+# import os
 import json
-import sync
-
+# import sync
 from ib.ext.Contract import Contract
 from ib.ext.Order import Order
 from ib.ext.OrderState import OrderState
+from ib.ext.ContractDetails import ContractDetails
+from ib.ext.Execution import Execution
+from ib.ext.CommissionReport import CommissionReport
+from database import FilledOrders, Commissions,  db_session
 import logging
 
 __author__ = 'Jason Haury'
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
+
 
 
 # ---------------------------------------------------------------------
@@ -24,7 +28,7 @@ def msg_to_dict(msg):
     """
     d = dict()
     for i in msg.items():
-        if isinstance(i[1], (Contract, Order, OrderState)):
+        if isinstance(i[1], (Contract, Order, OrderState, ContractDetails, Execution, CommissionReport)):
             d[i[0]] = i[1].__dict__
         else:
             d[i[0]] = i[1]
@@ -43,7 +47,7 @@ def connection_handler(msg):
         # g.getting_order_id = False  # Unlock place_order() to now be called again.
         log.info('Updated orderID: {}'.format(g.orderId))
     elif msg.typeName == 'managedAccounts':
-        g.managedAccounts = msg.accountsList.split(',')
+        g.managedAccounts = set(msg.accountsList.split(','))
         log.debug('Updated managed accounts: {}'.format(g.managedAccounts))
 
 
@@ -90,7 +94,7 @@ def history_handler(msg):
     """
     history = msg_to_dict(msg)
     g.history_resp[int(history['reqId'])][msg.date] = history.copy()
-    #log.debug('HISTORY: {})'.format(msg))
+    # log.debug('HISTORY: {})'.format(msg))
 
 
 def order_handler(msg):
@@ -102,11 +106,53 @@ def order_handler(msg):
         order_msg = g.order_resp_by_order.get(d['orderId'], dict(openOrder=dict(), orderStatus=dict()))
         order_msg[msg.typeName] = d.copy()
         g.order_resp_by_order[d['orderId']] = order_msg
-        log.debug('ORDER: {}'.format(d))
 
+        # Save all filled orders to SQLite DB
+        if msg.typeName == 'orderStatus' and msg.status == 'Filled':
+            filled_order = FilledOrders(msg.id, json.dumps(d))
+            db_session.merge(filled_order)
+            db_session.commit()
+
+
+        log.debug('ORDER: {}'.format(d))
     elif msg.typeName == 'openOrderEnd':
         g.order_resp['openOrderEnd'] = True
     log.debug('ORDER: {})'.format(msg))
+
+
+def contract_handler(msg):
+    """ Update our global to keep the latest ContractDetails available for API returns.
+    https://www.interactivebrokers.com/en/software/api/apiguide/java/contractdetails.htm
+
+    """
+    if msg.typeName in ['contractDetails', 'bondContractDetails']:
+        d = msg_to_dict(msg)
+        g.contract_resp[msg.typeName][msg.reqId] = d[msg.typeName].copy()
+        log.debug('CONTRACT: {}'.format(d))
+    elif msg.typeName == 'contractDetailsEnd':
+        g.contract_resp['contractDetailsEnd'] = True
+    log.debug('CONTRACT: {})'.format(msg))
+
+
+def executions_handler(msg):
+    """ Update our global to keep the latest execDetails available for API returns.
+    https://www.interactivebrokers.com/en/software/api/apiguide/java/execdetails.htm
+
+    """
+    if msg.typeName in ['execDetails', 'commissionReport']:
+        d = msg_to_dict(msg)
+        log.debug('Dictified msg: {}'.format(d))
+        if msg.typeName == 'execDetails':
+            g.executions_resp[msg.typeName].append(dict(execution=d['execution'].copy(), contract=d['contract'].copy()))
+        # Save all CommissionReports to SQLite DB
+        elif msg.typeName == 'commissionReport':
+            commission_report = Commissions(msg.m_execId, json.dumps(d))
+            db_session.merge(commission_report)
+            db_session.commit()
+        log.debug('EXECUTIONS: {}'.format(d))
+    elif msg.typeName == 'execDetailsEnd':
+        g.executions_resp['execDetailsEnd'] = True
+    log.debug('EXECUTIONS: {})'.format(msg))
 
 
 def error_handler(msg):
@@ -119,7 +165,8 @@ def error_handler(msg):
     g.error_resp[msg.id] = {i[0]: i[1] for i in msg.items()}
     log.error('ERROR: {}'.format(msg))
 
-    # If our client connections get out of sync,
+    # TODO if clientId is already in use erroneously, attempt to recover, or generate new clientId
+    # If our client connections get out of sync:
 
 
 def generic_handler(msg):
