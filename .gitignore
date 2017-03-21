@@ -2,3 +2,4 @@ notes.md
 etc/ibrest.*
 .idea
 /app/ibrest.*
+env-file
