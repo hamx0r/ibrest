@@ -13,6 +13,8 @@
 # or maybe
 # `docker run -d --restart=always --name ibrest --link ibgw -e "ID_SECRET_KEY=mysecret" -p 443:443 -v /home/jhaury/ibrest/app:/app ibrest`
 
+# If running TWS on the same machine and want to run a Conatiner which connects to it with default 7497 port:
+
 FROM python:2.7-alpine
 MAINTAINER Jason Haury "jason.haury@gmail.com"
 RUN pip install --upgrade pip
@@ -28,9 +30,9 @@ WORKDIR /app
 
 # To enable HTTPS, we need to copy certs
 # be sure to create your certs!
-COPY ./etc/ibrest.crt .
-COPY ./etc/ibrest.key .
-# RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./ibrest.key -out ./ibrest.crt -new -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN=www.example.com"
+#COPY ./etc/ibrest.crt .
+#COPY ./etc/ibrest.key .
+RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./ibrest.key -out ./ibrest.crt -new -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN=www.example.com"
 
 CMD [ "python", "./main.py" ]
 EXPOSE 443

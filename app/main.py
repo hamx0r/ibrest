@@ -440,7 +440,7 @@ log.debug('Using IB GW client at: {}:{}'.format(g.client_connection.host, g.clie
 
 if __name__ == '__main__':
     host = os.getenv('IBREST_HOST', '127.0.0.1')
-    port = int(os.getenv('IBREST_PORT', '80'))
+    port = int(os.getenv('IBREST_PORT', '443'))
     client_id = g.client_id
 
     # Set up our client connection with IBGW

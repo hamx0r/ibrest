@@ -25,7 +25,6 @@ timeout = 20  # Max loops
 
 # Mutables
 managedAccounts = set()
-# TODO use single clientId
 clientId_in_use = False
 client_connection = ibConnection(ibgw_host, ibgw_port, client_id)
 getting_order_id = False
