@@ -14,6 +14,8 @@
 # `docker run -d --restart=always --name ibrest --link ibgw -e "ID_SECRET_KEY=mysecret" -p 443:443 -v /home/jhaury/ibrest/app:/app ibrest`
 
 # If running TWS on the same machine and want to run a Conatiner which connects to it with default 7497 port:
+# docker run --name ibrest  --env-file=env-file  -p 443:443 ibrest
+# Where your env-file has IBREST_PORT, IBREST_HOST, IBGW_PORT_4003_TCP_ADDR, IBGW_PORT_4003_TCP_PORT and IBGW_CLIENT_ID as needed
 
 FROM python:2.7-alpine
 MAINTAINER Jason Haury "jason.haury@gmail.com"
@@ -32,6 +34,8 @@ WORKDIR /app
 # be sure to create your certs!
 #COPY ./etc/ibrest.crt .
 #COPY ./etc/ibrest.key .
+
+RUN apk --update add openssl
 RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout ./ibrest.key -out ./ibrest.crt -new -subj "/C=US/ST=Denial/L=Springfield/O=Dis/CN=www.example.com"
 
 CMD [ "python", "./main.py" ]
